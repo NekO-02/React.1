@@ -1,24 +1,59 @@
-import React, { useState } from 'react';
-import './App.css';
-import ThreadListScreen from './ThreadListScreen';
-import ThreadFormScreen from './ThreadFormScreen';
+import React, { useState, useEffect } from 'react';
+import ThreadList from './ThreadList';
+import ThreadCreate from './ThreadCreate';
+import ThreadPosts from './ThreadPosts';
 
-function App() {
-  const [showThreadForm, setShowThreadForm] = useState(false);
+const App = () => {
+  const [selectedThreadId, setSelectedThreadId] = useState('');
+  const [isCreatingThread, setIsCreatingThread] = useState(false);
+  const [threads, setThreads] = useState([]);
 
-  const toggleThreadForm = () => {
-    setShowThreadForm(!showThreadForm);
+  const fetchThreads = async () => {
+    try {
+      const response = await fetch('https://2y6i6tqn41.execute-api.ap-northeast-1.amazonaws.com/threads?offset=0');
+      const data = await response.json();
+      setThreads(data);
+    } catch (error) {
+      console.error('Error fetching threads:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchThreads();
+  }, []);
+
+  const handleCreateThread = () => {
+    setIsCreatingThread(true);
+  };
+
+  const handleBackToThreadList = () => {
+    setSelectedThreadId('');
+  };
+
+  const getSelectedThreadTitle = () => {
+    const selectedThread = threads.find((thread) => thread.id === selectedThreadId);
+    return selectedThread ? selectedThread.title : '';
   };
 
   return (
     <div>
-      {showThreadForm ? (
-        <ThreadFormScreen toggleThreadForm={toggleThreadForm} />
+      {isCreatingThread ? (
+        <ThreadCreate setIsCreatingThread={setIsCreatingThread} fetchThreads={fetchThreads} />
       ) : (
-        <ThreadListScreen toggleThreadForm={toggleThreadForm} />
+        <div>
+          {!selectedThreadId ? (
+            <ThreadList setSelectedThreadId={setSelectedThreadId} handleCreateThread={handleCreateThread} threads={threads} />
+          ) : (
+            <ThreadPosts
+              selectedThreadId={selectedThreadId}
+              handleBackToThreadList={handleBackToThreadList}
+              selectedThreadTitle={getSelectedThreadTitle()}
+            />
+          )}
+        </div>
       )}
     </div>
   );
-}
+};
 
 export default App;
